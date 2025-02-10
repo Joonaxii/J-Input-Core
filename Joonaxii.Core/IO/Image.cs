@@ -25,6 +25,9 @@ namespace Joonaxii.IO.Image
         internal static RefStack<byte> DataBuffer => _dataBuffer;
         internal static RefStack<byte> BigScanBuffer => _bigScanBuffer;
 
+        private static RefStack<byte> _dataBuffer = new RefStack<byte>();
+        private static RefStack<byte> _bigScanBuffer = new RefStack<byte>();
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int CalcualtePadding(int width, int bpp)
         {
@@ -49,9 +52,6 @@ namespace Joonaxii.IO.Image
                     break;
             }
         }
-
-        private static RefStack<byte> _dataBuffer = new RefStack<byte>();
-        private static RefStack<byte> _bigScanBuffer = new RefStack<byte>();
     }
 
     public static class Png

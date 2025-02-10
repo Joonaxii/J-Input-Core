@@ -111,7 +111,9 @@ namespace Joonaxii.JInput
             Debugger.Assert(index >= 0 && index <= _length && index < SIZE, $"Index '{_length}' is out of range! (0/{_length})");
 
             fixed (byte* buf = _buffer)
-                UnsafeExtensions.InverseMemoryCopy(buf + index, buf + index + 1, SIZE - index - 1, _length - index);
+            {
+                UnsafeUtil.InverseMemoryCopy(buf + index, buf + index + 1, SIZE - index - 1, _length - index);
+            }
 
             _buffer[index] = value;
             _length++;
@@ -164,7 +166,7 @@ namespace Joonaxii.JInput
         {
             Debugger.Assert(index >= 0 && index < SIZE, $"Index '{index}' is out of range! (0/{SIZE})");
             U valueOut = default;
-            UnsafeExtensions.CopyBytes(ref _buffer[index], ref valueOut);
+            UnsafeUtil.CopyBytes(ref _buffer[index], ref valueOut);
             return valueOut;
         }
 
@@ -177,7 +179,7 @@ namespace Joonaxii.JInput
         public void SetAt<U>(U value, int index) where U : unmanaged
         {
             Debugger.Assert(index >= 0 && index < SIZE, $"Index '{index}' is out of range! (0/{SIZE})");
-            UnsafeExtensions.CopyBytes(ref value, ref _buffer[index]);
+            UnsafeUtil.CopyBytes(ref value, ref _buffer[index]);
         }
     }
 
@@ -269,7 +271,7 @@ namespace Joonaxii.JInput
 
             fixed (uint* buf = _buffer)
             {
-                UnsafeExtensions.InverseMemoryCopy(buf + index, buf + index + 1, SIZE - index - 1, _length - index);
+                UnsafeUtil.InverseMemoryCopy(buf + index, buf + index + 1, SIZE - index - 1, _length - index);
             }
 
             _buffer[index] = value;
@@ -323,7 +325,7 @@ namespace Joonaxii.JInput
         {
             Debugger.Assert(index >= 0 && index < SIZE, $"Index '{index}' is out of range! (0/{SIZE})");
             U valueOut = default;
-            UnsafeExtensions.CopyBytes(ref _buffer[index], ref valueOut);
+            UnsafeUtil.CopyBytes(ref _buffer[index], ref valueOut);
             return valueOut;
         }
 
@@ -336,7 +338,7 @@ namespace Joonaxii.JInput
         public void SetAt<U>(U value, int index) where U : unmanaged
         {
             Debugger.Assert(index >= 0 && index < SIZE, $"Index '{index}' is out of range! (0/{SIZE})");
-            UnsafeExtensions.CopyBytes(ref value, ref _buffer[index]);
+            UnsafeUtil.CopyBytes(ref value, ref _buffer[index]);
         }
     }
 }
