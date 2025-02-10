@@ -1,6 +1,7 @@
 ﻿using Joonaxii.Collections;
 using Joonaxii.Hashing;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -23,6 +24,128 @@ namespace Joonaxii.IO
         // even if we're passing in a span to the write/read methods.
         private static RefStack<byte> IO_BUFFER = new RefStack<byte>(256);
         private static RefStack<char> CHAR_BUFFER = new RefStack<char>(256);
+
+        private static int BufferString(string str, Encoding encoding = null)
+        {
+            encoding ??= UTF8_NO_BOM;
+
+            int count = encoding.GetByteCount(str);
+            IO_BUFFER.Resize(count, false, false);
+            count = encoding.GetBytes(str, 0, str.Length, IO_BUFFER.Buffer, 0);
+            return count;
+        }
+
+        public static void WriteUI8String(this Stream stream, string value, Encoding encoding = null)
+        {
+            int count = Math.Min(BufferString(value, encoding), byte.MaxValue);
+            stream.WriteValue(ref count);
+            stream.Write(IO_BUFFER.Buffer, 0, count);
+        }
+
+        public static void WriteUI16String(this Stream stream, string value, Encoding encoding = null)
+        {
+            int count = Math.Min(BufferString(value, encoding), ushort.MaxValue);
+            stream.WriteValue(ref count);
+            stream.Write(IO_BUFFER.Buffer, 0, count);
+        }
+
+        public static void WriteI32String(this Stream stream, string value, Encoding encoding = null)
+        {
+            int count = Math.Min(BufferString(value, encoding), int.MaxValue);
+            stream.WriteVarInt(count);
+            stream.Write(IO_BUFFER.Buffer, 0, count);
+        }
+
+        public static string ReadUI8String(this Stream stream, Encoding encoding = null)
+        {
+            encoding ??= UTF8_NO_BOM;
+            byte len = 0;
+            stream.TryRead(ref len);
+            IO_BUFFER.Resize(len, false, false);
+            stream.Read(IO_BUFFER.Buffer, 0, len);
+            return encoding.GetString(IO_BUFFER.Buffer, 0, len);
+        }
+
+        public static string ReadUI16String(this Stream stream, Encoding encoding = null)
+        {
+            encoding ??= UTF8_NO_BOM;
+            ushort len = 0;
+            stream.TryRead(ref len);
+            IO_BUFFER.Resize(len, false, false);
+            stream.Read(IO_BUFFER.Buffer, 0, len);
+            return encoding.GetString(IO_BUFFER.Buffer, 0, len);
+        }
+
+        public static string ReadI32String(this Stream stream, Encoding encoding = null)
+        {
+            encoding ??= UTF8_NO_BOM;
+            int len = stream.ReadVarInt();
+            IO_BUFFER.Resize(len, false, false);
+            stream.Read(IO_BUFFER.Buffer, 0, len);
+            return encoding.GetString(IO_BUFFER.Buffer, 0, len);
+        }
+
+        public static int CalculateVarIntSize(int value)
+        {
+            Debugger.Assert(value >= 0 && value < 268435456, "Var Int too big!");
+            int num = 0;
+            do
+            {
+                value >>= 7;
+                ++num;
+            } while (value > 0x7F);
+
+            return num;
+        }
+
+        public static void WriteVarInt(this BinaryWriter bw, int value)
+        {
+            Debugger.Assert(value >= 0 && value < 268435456, "Var Int too big!");
+            do
+            {
+                bw.Write((byte)(value & 0xFF));
+                value >>= 7;
+            } while (value > 0x7F);
+        }
+
+        public static int ReadVarInt(this BinaryReader br)
+        {
+            int tmp;
+            int outVal = 0;
+            int offset = 0;
+            do
+            {
+                tmp = br.ReadByte();
+                outVal |= (tmp & 0x7F) << offset;
+                offset += 7;
+            } while (offset <= 21 && (tmp & 0x80) != 0);
+            return outVal;
+        }
+
+        public static void WriteVarInt(this Stream stream, int value)
+        {
+            Debugger.Assert(value >= 0 && value < 268435456, "Var Int too big!");
+            do
+            {
+                stream.WriteByte((byte)(value & 0xFF));
+                value >>= 7;
+            } while (value > 0x7F);
+        }
+
+        public static int ReadVarInt(this Stream stream)
+        {
+            int tmp;
+            int outVal = 0;
+            int offset = 0;
+            do
+            {
+                tmp = stream.ReadByte();
+                if (tmp < 0) { break; }
+                outVal |= (tmp & 0x7F) << offset;
+                offset += 7;
+            } while (offset <= 21 && (tmp & 0x80) != 0);
+            return outVal;
+        }
 
         public static Span<byte> ReadBuffered(Stream stream, int length = -1)
         {

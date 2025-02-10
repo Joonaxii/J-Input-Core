@@ -62,20 +62,40 @@ namespace Joonaxii.Hashing
         }
         public static Hash ComputeMD5<T>(this T value) where T : unmanaged
         {
-            if (value is IHashable<State> crc)
+            if (typeof(IHashable<State>).IsAssignableFrom(typeof(T)))
             {
                 State state = default;
                 state.Init();
-                return crc.UpdateHash(ref state).Extract();
+                return (value as IHashable<State>).UpdateHash(ref state).Extract();
+            }
+            return MemoryMarshal.AsBytes(UnsafeUtil.AsBytes(ref value)).ComputeMD5();
+        }
+
+        public static Hash ComputeMD5<T>(ref T value) where T : unmanaged
+        {
+            if (typeof(IHashable<State>).IsAssignableFrom(typeof(T)))
+            {
+                State state = default;
+                state.Init();
+                return (value as IHashable<State>).UpdateHash(ref state).Extract();
             }
             return MemoryMarshal.AsBytes(UnsafeUtil.AsBytes(ref value)).ComputeMD5();
         }
 
         public static ref State Update<T>(ref this State state, T value) where T : unmanaged
         {
-            if (value is IHashable<State> crc)
+            if (typeof(IHashable<State>).IsAssignableFrom(typeof(T)))
             {
-                return ref crc.UpdateHash(ref state);
+                return ref (value as IHashable<State>).UpdateHash(ref state);
+            }
+            return ref state.Update(UnsafeUtil.AsBytes(ref value));
+        }
+
+        public static ref State Update<T>(ref this State state, ref T value) where T : unmanaged
+        {
+            if (typeof(IHashable<State>).IsAssignableFrom(typeof(T)))
+            {
+                return ref (value as IHashable<State>).UpdateHash(ref state);
             }
             return ref state.Update(UnsafeUtil.AsBytes(ref value));
         }

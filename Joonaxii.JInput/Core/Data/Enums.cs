@@ -69,26 +69,28 @@ namespace Joonaxii.JInput
         None = 0,
         Mouse0 = 0x1,
         Mouse1 = 0x2,
-        Mouse3 = 0x3,
-        Mouse4 = 0x4,
-        Mouse5 = 0x5,
+        Cancel = 0x3,
+        Mouse2 = 0x4,
+        Mouse3 = 0x5,
+        Mouse4 = 0x6,
+        Mouse5 = 0x7,
 
         Backspace = 0x8,
         Tab = 0x9,
+
+        Clear = 0xC,
+        Enter = 0xD,
 
         Shift = 0x10,
         Ctrl = 0x11,
         Alt = 0x12,
 
-        Clear = 0xC,
-        Enter = 0xD,
-
         Pause = 0x13,
         CapsLock = 0x14,
 
         Escape = 0x1B,
-        Space = 0x20,
 
+        Space = 0x20,
         PageUp = 0x21,
         PageDown = 0x22,
         End = 0x23,
@@ -100,8 +102,11 @@ namespace Joonaxii.JInput
         Down = 0x28,
 
         Print = 0x2A,
+        Execute = 0x2B,
+        PrintScrn = 0x2C,
         Insert = 0x2D,
         Delete = 0x2E,
+        Help = 0x2F,
 
         D0 = 0x30,
         D1 = 0x31,
@@ -141,9 +146,11 @@ namespace Joonaxii.JInput
         Y = 'Y',
         Z = 'Z',
 
-        LWindows = 0x5B,
-        RWindows = 0x5C,
+        LSuper = 0x5B,
+        RSuper = 0x5C,
         Apps = 0x5D,
+
+        Sleep = 0x5F,
 
         Num0 = 0x60,
         Num1 = 0x61,
@@ -202,6 +209,7 @@ namespace Joonaxii.JInput
         VolumeMute = 0xAD,
         VolumeDown = 0xAE,
         VolumeUp = 0xAF,
+
         MediaNext = 0xB0,
         MediaPrev = 0xB1,
         MediaStop = 0xB2,
@@ -212,11 +220,11 @@ namespace Joonaxii.JInput
         Comma = 0xBC,
         Minus = 0xBD,
         Period = 0xBE,
-        Question = 0xBF,
+        FSlash = 0xBF,
         Tilde = 0xC0,
 
         LBracket = 0xDB,
-        FSlash = 0xDC,
+        BSlash = 0xDC,
         RBracket = 0xDD,
         Quote = 0xDE,
 

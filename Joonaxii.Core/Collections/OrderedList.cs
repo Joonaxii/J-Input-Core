@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace Joonaxii.Collections
 {
+    [Serializable]
     public class OrderedList<T> : IList<T>
     {
         public delegate int CompareT(in T lhs, in T rhs);
@@ -52,16 +53,33 @@ namespace Joonaxii.Collections
 
         public void Trim()
         {
-            if(_buffer.Length > _count)
+            if (_buffer.Length > _count)
             {
                 Array.Resize(ref _buffer, _count);
             }
         }
 
         public bool Add(in T item)
-            => Add(in item, out _, _comparer.CompareTo);
+            => Add(in item, out _);
         public bool Add(in T item, out int index)
-            => Add(in item, out index, _comparer.CompareTo);
+        {
+            int ind = Nearest(in item);
+            if (ind < _count && _comparer.CompareTo(in _buffer[ind], in item) == 0)
+            {
+                index = ind;
+                return false;
+            }
+
+            CheckForExpansion(_count + 1);
+            if (ind < _count)
+            {
+                Array.Copy(_buffer, ind, _buffer, ind + 1, _count - ind);
+            }
+            _buffer[ind] = item;
+            index = ind;
+            _count++;
+            return true;
+        }
 
         public bool Add(in T item, CompareT predicate) => Add(in item, out _, predicate);
         public bool Add(in T item, out int index, CompareT predicate)
@@ -86,7 +104,28 @@ namespace Joonaxii.Collections
 
         public int IndexOf(in T value)
         {
-            return IndexOf(in value, _comparer.CompareTo);
+            int l = 0;
+            int r = _count - 1;
+
+            while (l <= r)
+            {
+                int m = l + (r - l) / 2;
+                int res = _comparer.CompareTo(in _buffer[m], in value);
+
+                if (res == 0)
+                {
+                    return m;
+                }
+                else if (res < 0)
+                {
+                    l = m + 1;
+                }
+                else
+                {
+                    r = m - 1;
+                }
+            }
+            return -1;
         }
         public int IndexOf(in T value, CompareT predicate)
         {
@@ -95,7 +134,7 @@ namespace Joonaxii.Collections
 
             while (l <= r)
             {
-                int m = l + (r - l >> 1);
+                int m = l + (r - l) / 2;
                 int res = predicate.Invoke(in _buffer[m], in value);
 
                 if (res == 0)
@@ -113,10 +152,35 @@ namespace Joonaxii.Collections
             }
             return -1;
         }
-        
+
         public int Nearest(in T value)
         {
-            return Nearest(in value, _comparer.CompareTo);
+            int l = 0;
+            int r = _count - 1;
+            int m;
+            if (_count <= 0)
+            {
+                return 0;
+            }
+
+            while (l <= r)
+            {
+                m = l + (r - l) / 2;
+                int res = _comparer.CompareTo(in _buffer[m], in value);
+                if (res == 0)
+                {
+                    return m;
+                }
+                else if (res < 0)
+                {
+                    l = m + 1;
+                }
+                else
+                {
+                    r = m - 1;
+                }
+            }
+            return l;
         }
         public int Nearest(in T value, CompareT predicate)
         {
@@ -130,7 +194,7 @@ namespace Joonaxii.Collections
 
             while (l <= r)
             {
-                m = l + (r - l >> 1);
+                m = l + (r - l) / 2;
                 int res = predicate.Invoke(in _buffer[m], in value);
                 if (res == 0)
                 {
@@ -148,7 +212,48 @@ namespace Joonaxii.Collections
             return l;
         }
 
-        public void Update(int index) => Update(index, _comparer.CompareTo);
+        public void Update(int index)
+        {
+            if (_count < 2 || index < 0 || index >= _count) { return; }
+
+            int startIndex = -1;
+            int idx;
+            while (true)
+            {
+                if (startIndex == index) { break; }
+                startIndex = startIndex < 0 ? index : startIndex;
+
+                int ret;
+                ref var cur = ref _buffer[index];
+
+                idx = index - 1;
+                if (startIndex != idx && idx > -1)
+                {
+                    ref var rhs = ref _buffer[idx];
+                    ret = _comparer.CompareTo(in cur, in rhs);
+                    if (ret < 0)
+                    {
+                        Swap(ref cur, ref rhs);
+                        index--;
+                        continue;
+                    }
+                }
+
+                idx = index + 1;
+                if (startIndex != idx && idx < _count)
+                {
+                    ref var rhs = ref _buffer[idx];
+                    ret = _comparer.CompareTo(in cur, in rhs);
+                    if (ret > 0)
+                    {
+                        Swap(ref cur, ref rhs);
+                        index++;
+                        continue;
+                    }
+                }
+                break;
+            }
+        }
         public void Update(int index, CompareT predicate)
         {
             if (_count < 2 || index < 0 || index >= _count) { return; }
@@ -192,7 +297,7 @@ namespace Joonaxii.Collections
             }
         }
 
-        public bool Contains(in T item) => IndexOf(in item, _comparer.CompareTo) > -1;
+        public bool Contains(in T item) => IndexOf(in item) > -1;
         public bool Contains(in T item, CompareT predicate) => IndexOf(in item, predicate) > -1;
         public void CopyTo(T[] array, int arrayIndex)
         {
@@ -210,7 +315,7 @@ namespace Joonaxii.Collections
         }
 
         public bool Remove(in T item)
-            => RemoveAt(IndexOf(in item, _comparer.CompareTo));
+            => RemoveAt(IndexOf(in item));
         public bool Remove(in T item, CompareT predicate)
             => RemoveAt(IndexOf(in item, predicate));
         public bool RemoveAt(int ind)
@@ -256,7 +361,7 @@ namespace Joonaxii.Collections
             }
         }
 
-        public bool TryGet(in T key, out T value) => TryGet(in key, out value, _comparer.CompareTo);
+        public bool TryGet(in T key, out T value) => TryGet(in key, out value);
         public bool TryGet(in T key, out T value, CompareT predicate)
         {
             int ind = IndexOf(in key, predicate);
@@ -314,12 +419,13 @@ namespace Joonaxii.Collections
         }
     }
 
+    [Serializable]
     public class OrderedList<T, U> : OrderedList<T>
     {
         public delegate int CompareU(in T lhs, in U rhs);
         protected IRefComparer<T, U> _comparerU;
 
-        public OrderedList(IRefComparer<T, U> comparer) : base(8, comparer) 
+        public OrderedList(IRefComparer<T, U> comparer) : base(8, comparer)
         {
             _comparerU = comparer;
         }
@@ -330,7 +436,28 @@ namespace Joonaxii.Collections
 
         public int IndexOf(in U value)
         {
-            return IndexOf(in value, _comparerU.CompareTo);
+            int l = 0;
+            int r = _count - 1;
+
+            while (l <= r)
+            {
+                int m = l + (r - l) / 2;
+                int res = _comparerU.CompareTo(in _buffer[m], in value);
+
+                if (res == 0)
+                {
+                    return m;
+                }
+                else if (res < 0)
+                {
+                    l = m + 1;
+                }
+                else
+                {
+                    r = m - 1;
+                }
+            }
+            return -1;
         }
 
         public int IndexOf(in U value, CompareU predicate)
@@ -340,7 +467,7 @@ namespace Joonaxii.Collections
 
             while (l <= r)
             {
-                int m = l + (r - l >> 1);
+                int m = l + (r - l) / 2;
                 int res = predicate.Invoke(in _buffer[m], in value);
 
                 if (res == 0)
@@ -359,12 +486,12 @@ namespace Joonaxii.Collections
             return -1;
         }
 
-        public bool Contains(in U item) => IndexOf(in item, _comparerU.CompareTo) > -1;
+        public bool Contains(in U item) => IndexOf(in item) > -1;
         public bool Contains(in U item, CompareU predicate) => IndexOf(in item, predicate) > -1;
 
         public T SelectBy(in U item)
         {
-            int ind = IndexOf(in item, _comparerU.CompareTo);
+            int ind = IndexOf(in item);
             return ind > -1 ? _buffer[ind] : default;
         }
 
@@ -375,19 +502,29 @@ namespace Joonaxii.Collections
         }
         public bool Remove(in U value)
         {
-            return RemoveAt(IndexOf(in value, _comparerU.CompareTo));
+            return RemoveAt(IndexOf(in value));
         }
         public bool Remove(in U value, CompareU predicate)
         {
             return RemoveAt(IndexOf(in value, predicate));
         }
 
-        public bool TryGet(in U key, out T value) => TryGet(in key, out value, _comparerU.CompareTo);
+        public bool TryGet(in U key, out T value)
+        {
+            int ind = IndexOf(in key);
+            if (ind < 0)
+            {
+                value = default;
+                return false;
+            }
+            value = _buffer[ind];
+            return true;
+        }
 
         public bool TryGet(in U key, out T value, CompareU predicate)
         {
             int ind = IndexOf(in key, predicate);
-            if(ind < 0)
+            if (ind < 0)
             {
                 value = default;
                 return false;
@@ -436,7 +573,7 @@ namespace Joonaxii.Collections
             return lhs.CompareTo(in rhs);
         }
     }
-      
+
     public class ValueComparer<T> : IRefComparer<T> where T : IComparable<T>
     {
         public static ValueComparer<T> Default { get; } = new ValueComparer<T>();
@@ -453,7 +590,7 @@ namespace Joonaxii.Collections
             return lhs.CompareTo(rhs);
         }
     }
-    
+
     public class ValueComparer<T, U> : IRefComparer<T, U> where T : IComparable<T>, IComparable<U>
     {
         public static ValueComparer<T, U> Default { get; } = new ValueComparer<T, U>();

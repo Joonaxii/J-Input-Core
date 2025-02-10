@@ -65,6 +65,58 @@ namespace Joonaxii.Collections
             return line.Slice(0, end);
         }
 
+        public static ReadOnlySpan<char> TrimWhitespace(this ReadOnlySpan<char> span)
+        {
+            return span.TrimStart_Internal().TrimEnd_Internal();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsWhiteSpace(char ch)
+        {
+            switch (ch)
+            {
+                case '\uFFEF':
+                case '\uFEFF':
+                    return true;
+                default:
+                    return char.IsWhiteSpace(ch);
+            }
+        }
+
+        public static SpanRange32 TrimWhitespace(this SpanRange32 range, ReadOnlySpan<char> span)
+        {
+            int start;
+            int endI = range.index + range.length;
+            for (start = range.index; start < endI && IsWhiteSpace(span[start]); start++) { }
+
+            int end = endI - 1;
+            while (end >= start && IsWhiteSpace(span[end]))
+            {
+                end--;
+            }
+
+            ++end;
+            range.index = start;
+            range.length = end - start;
+            return range;
+        }
+
+        private static ReadOnlySpan<char> TrimStart_Internal(this ReadOnlySpan<char> span)
+        {
+            int i;
+            for (i = 0; i < span.Length && (span[i] == '\0' || char.IsWhiteSpace(span[i])); i++) { }
+            return span.Slice(i);
+        }
+
+        private static ReadOnlySpan<char> TrimEnd_Internal(this ReadOnlySpan<char> span)
+        {
+            int num = span.Length - 1;
+            while (num >= 0 && (span[num] == '\0' || char.IsWhiteSpace(span[num])))
+            {
+                num--;
+            }
+            return span.Slice(0, num + 1);
+        }
 
         public static Span<char> Unescape(this Span<char> input, DoUnescape unescapeCheck = null)
         {
